@@ -1,0 +1,1 @@
+aslında işinize yarayabilir :)
