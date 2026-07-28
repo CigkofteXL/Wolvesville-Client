@@ -1,0 +1,298 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VarietyShop Proxy Komuta Merkezi</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body {
+            background-color: #080c14;
+            color: #cbd5e1;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        .cyber-card {
+            background: linear-gradient(145deg, #0f172a, #090d16);
+            border: 1px border #1e293b;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #10b981;
+            }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto space-y-6">
+
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 gap-4">
+            <div>
+                <h1 class="text-3xl font-black text-emerald-400 tracking-wider">VARIETYSHOP // PROXY CONTROL</h1>
+                <p class="text-xs text-slate-500 mt-1 tracking-widest">> ANA TRAFİK YÖNLENDİRME VE DAĞITIM İSTASYONU</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="checkAllProxies()" id="btnCheckAll" class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-amber-500/30 rounded text-xs font-bold transition cursor-pointer">⚡ TÜMÜNÜ TEST ET</button>
+                <span class="px-4 py-1.5 bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 rounded text-xs font-bold animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.1)]">● SİSTEM ÇEVRİMİÇİ</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="cyber-card p-4 rounded-xl border border-slate-800/80">
+                <div class="text-xs text-slate-500 uppercase tracking-wider">Toplam Rota (Proxy)</div>
+                <div id="statTotal" class="text-3xl font-extrabold text-slate-200 mt-1">0</div>
+            </div>
+            <div class="cyber-card p-4 rounded-xl border border-slate-800/80">
+                <div class="text-xs text-amber-500 uppercase tracking-wider">Boştaki Rezervler</div>
+                <div id="statAvailable" class="text-3xl font-extrabold text-amber-400 mt-1">0</div>
+            </div>
+            <div class="cyber-card p-4 rounded-xl border border-slate-800/80">
+                <div class="text-xs text-blue-500 uppercase tracking-wider">Görevdeki Botlar</div>
+                <div id="statAssigned" class="text-3xl font-extrabold text-blue-400 mt-1">0</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <div class="bg-slate-900/60 border border-slate-800/80 p-5 rounded-xl h-fit">
+                <div class="flex border-b border-slate-800 mb-4 text-xs font-bold">
+                    <button id="tabSingleBtn" onclick="switchTab('single')" class="flex-1 pb-2 border-b-2 border-emerald-500 text-emerald-400 uppercase tracking-wider cursor-pointer">Tekli Ekle</button>
+                    <button id="tabBulkBtn" onclick="switchTab('bulk')" class="flex-1 pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-400 uppercase tracking-wider cursor-pointer">Toplu Enjeksiyon</button>
+                </div>
+
+                <div id="formSingle" class="space-y-3">
+                    <div>
+                        <label class="block text-[11px] text-slate-500 mb-1 uppercase">IP Adresi veya DNS</label>
+                        <input id="ip" type="text" placeholder="192.168.1.1 veya proxy.domain.com" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-emerald-400 font-mono focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-500 mb-1 uppercase">Port</label>
+                        <input id="port" type="number" placeholder="8888" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-emerald-400 font-mono focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-500 mb-1 uppercase">Proxy User (Kullanıcı Adı)</label>
+                        <input id="username" type="text" placeholder="opsiyonel" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-emerald-400 font-mono focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-500 mb-1 uppercase">Proxy Pass (Şifre)</label>
+                        <input id="password" type="text" placeholder="opsiyonel" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-emerald-400 font-mono focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <button onclick="addSingleProxy()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold py-2.5 rounded text-xs tracking-wider uppercase transition mt-2 cursor-pointer shadow-md">Sisteme Enjekte Et</button>
+                </div>
+
+                <div id="formBulk" class="space-y-3 hidden">
+                    <div>
+                        <label class="block text-[11px] text-slate-500 mb-1 uppercase">Proxy Listesi (Satır Satır)</label>
+                        <textarea id="bulkText" rows="10" placeholder="Örnek Format:&#10;192.168.1.50:8080&#10;proxy.domain.com:3128:user123:pass456" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-emerald-400 font-mono focus:outline-none focus:border-emerald-500 resize-none"></textarea>
+                    </div>
+                    <button onclick="addBulkProxies()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold py-2.5 rounded text-xs tracking-wider uppercase transition cursor-pointer shadow-md">Listeyi Toplu Yükle</button>
+                </div>
+            </div>
+
+            <div class="lg:grid-cols-1 lg:col-span-2 bg-slate-900/40 border border-slate-800/80 p-5 rounded-xl">
+                <h2 class="text-sm font-semibold text-slate-400 mb-4 tracking-wider uppercase">// Aktif Yönlendirme Ağacı</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-500 bg-slate-950/50 font-bold tracking-wider">
+                                <th class="p-3">BAĞLANTI NOKTASI (IP / DNS)</th>
+                                <th class="p-3">USER / PASS</th>
+                                <th class="p-3">DURUM / PING</th>
+                                <th class="p-3">TAHSİS EDİLEN BOT</th>
+                                <th class="p-3 text-right">OPERASYON</th>
+                            </tr>
+                        </thead>
+                        <tbody id="proxyTableBody" class="font-mono">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-950 border border-slate-900 rounded-xl p-4 shadow-inner">
+            <div class="flex justify-between items-center border-b border-slate-900 pb-2 mb-3 text-xs tracking-wider font-bold text-slate-500">
+                <span>// CANLI TRAFİK AKIŞI (TERMINAL)</span>
+                <span class="text-[10px] text-slate-600 animate-pulse">AKTİF DİNLEMEDE...</span>
+            </div>
+            <div id="terminalLog" class="h-44 overflow-y-auto text-xs text-emerald-500 space-y-1 font-mono leading-relaxed bg-black/40 p-3 rounded border border-slate-900/60">
+            </div>
+        </div>
+
+    </div>
+
+    <script>const API_URL = '/api/proxy-manager';
+
+        function switchTab(type) {
+            const singleBtn = document.getElementById('tabSingleBtn');
+            const bulkBtn = document.getElementById('tabBulkBtn');
+            const formSingle = document.getElementById('formSingle');
+            const formBulk = document.getElementById('formBulk');
+
+            if(type === 'single') {
+                singleBtn.className = "flex-1 pb-2 border-b-2 border-emerald-500 text-emerald-400 uppercase tracking-wider cursor-pointer";
+                bulkBtn.className = "flex-1 pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-400 uppercase tracking-wider cursor-pointer";
+                formSingle.classList.remove('hidden');
+                formBulk.classList.add('hidden');
+            } else {
+                bulkBtn.className = "flex-1 pb-2 border-b-2 border-emerald-500 text-emerald-400 uppercase tracking-wider cursor-pointer";
+                singleBtn.className = "flex-1 pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-400 uppercase tracking-wider cursor-pointer";
+                formBulk.classList.remove('hidden');
+                formSingle.classList.add('hidden');
+            }
+        }
+
+        async function loadProxies() {
+            const res = await fetch(`${API_URL}/list`);
+            const data = await res.json();
+            const body = document.getElementById('proxyTableBody');
+            body.innerHTML = '';
+
+            let total = data.length;
+            let assigned = 0;
+            let available = 0;
+
+            data.forEach(p => {
+                if(p.assignedProfile) assigned++; else available++;
+
+                let credentialText = '<span class="text-slate-600 font-sans text-[11px]">Yok</span>';
+                if(p.username || p.password) {
+                    credentialText = `<span class="text-slate-400">${p.username || ''}</span>:<span class="text-slate-500">${p.password || ''}</span>`;
+                }
+
+                // Canlılık Durumu Badge Renk Ayarı
+                let statusBadge = '<span class="text-slate-500 font-bold">Bilinmiyor</span>';
+                if (p.status === 'Online') {
+                    statusBadge = `<span class="px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-900 rounded text-[10px] font-bold">OK - ${p.ping}ms</span>`;
+                } else if (p.status === 'Offline') {
+                    statusBadge = '<span class="px-1.5 py-0.5 bg-rose-950 text-rose-400 border border-rose-900 rounded text-[10px] font-bold">ERR</span>';
+                }
+
+                body.innerHTML += `
+                    <tr class="border-b border-slate-800/60 hover:bg-slate-950/60 transition">
+                        <td class="p-3 text-emerald-400 font-semibold tracking-wide">${p.ip}:${p.port}</td>
+                        <td class="p-3 text-xs">${credentialText}</td>
+                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3">
+                            ${p.assignedProfile
+                                ? `<div class="flex items-center gap-2">
+                                     <span class="px-2 py-0.5 bg-blue-950 text-blue-400 border border-blue-800/60 rounded text-[11px] font-bold">${p.assignedProfile}</span>
+                                     <button onclick="unassignProxy(${p.id})" title="Tahsisi Boşa Çıkar" class="text-slate-600 hover:text-amber-500 text-xs transition cursor-pointer">⟳</button>
+                                   </div>`
+                                : '<span class="text-amber-500/80 text-[11px] font-bold">● BEKLEMEDE</span>'}
+                        </td>
+                        <td class="p-3 text-right">
+                            <button onclick="deleteProxy(${p.id})" class="text-rose-500 hover:text-rose-400 font-bold transition cursor-pointer text-[11px] tracking-wider">SİL</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statAvailable').innerText = available;
+            document.getElementById('statAssigned').innerText = assigned;
+        }
+
+        // 🔥 CANLI TERMINAL LOGLARINI POLLEDEN METOD (1.5 Saniyede Bir)
+        async function fetchLogs() {
+            try {
+                const res = await fetch(`${API_URL}/logs`);
+                const logs = await res.json();
+                const term = document.getElementById('terminalLog');
+
+                // Kaydırma durumunu kontrol et
+                const isScrolledToBottom = term.scrollHeight - term.clientHeight <= term.scrollTop + 30;
+
+                term.innerHTML = logs.map(l => {
+                    if (l.includes('[ERR') || l.includes('[SIZINTI')) return `<div class="text-rose-400">${l}</div>`;
+                    if (l.includes('[VURGUN') || l.includes('[SİSTEM')) return `<div class="text-amber-400">${l}</div>`;
+                    return `<div>${l}</div>`;
+                }).join('');
+
+                if (isScrolledToBottom && logs.length > 0) {
+                    term.scrollTop = term.scrollHeight;
+                }
+            } catch {}
+        }
+
+        async function checkAllProxies() {
+            const btn = document.getElementById('btnCheckAll');
+            btn.innerText = '⏳ DENETLENİYOR...';
+            btn.disabled = true;
+
+            try {
+                await fetch(`${API_URL}/check-all`, { method: 'POST' });
+                await loadProxies();
+            } catch {
+                alert("Denetim sırasında bağlantı hatası oluştu!");
+            } finally {
+                btn.innerText = '⚡ TÜMÜNÜ TEST ET';
+                btn.disabled = false;
+            }
+        }
+
+        async function addSingleProxy() {
+            const ip = document.getElementById('ip').value.trim();
+            const port = parseInt(document.getElementById('port').value);
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if(!ip || !port) return alert("Hata: IP/DNS ve Port girmek zorunludur!");
+
+            await fetch(`${API_URL}/add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip, port, username, password })
+            });
+
+            document.getElementById('ip').value = '';
+            document.getElementById('port').value = '';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            loadProxies();
+        }
+
+        async function addBulkProxies() {
+            const text = document.getElementById('bulkText').value;
+            if(!text.trim()) return alert("Hata: Proxy listesi boş olamaz!");
+
+            const res = await fetch(`${API_URL}/bulk-add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+            const result = await res.json();
+            alert(result.message);
+
+            document.getElementById('bulkText').value = '';
+            loadProxies();
+        }
+
+        async function unassignProxy(id) {
+            if(!confirm("Bu bota zimmetlenen proxy'yi boşa çıkarmak istediğine emin misin?")) return;
+            await fetch(`${API_URL}/unassign/${id}`, { method: 'POST' });
+            loadProxies();
+        }
+
+        async function deleteProxy(id) {
+            if(!confirm("Bu proxy rotasını kalıcı olarak silmek istediğine emin misin?")) return;
+            await fetch(`${API_URL}/delete/${id}`, { method: 'DELETE' });
+            loadProxies();
+        }
+
+        // Tetikleyiciler
+        loadProxies();
+        setInterval(fetchLogs, 1500); // Terminali 1.5 saniyede bir güncelle</script>
+</body>
+</html>

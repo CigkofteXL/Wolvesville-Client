@@ -1,0 +1,6 @@
+@api.varietyproxys.com.tr_HostAddress = http://localhost:5156
+
+GET {{api.varietyproxys.com.tr_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
