@@ -1,0 +1,6 @@
+@yeniceri.varietyshop.com.tr_HostAddress = http://localhost:5244
+
+GET {{yeniceri.varietyshop.com.tr_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
