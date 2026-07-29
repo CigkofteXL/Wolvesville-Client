@@ -1,0 +1,1012 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HBV Core PWM (Profile & Window Manager)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0B0F19; /* Derin uzay siyahı/mavisi */
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ef4444; 
+        }
+
+        /* Glassmorphism Paneller */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Glow Efektleri */
+        .glow-red {
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.15);
+        }
+        .glow-purple {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+        }
+
+        /* Form Elemanları */
+        .modern-input {
+            background: #1A2234;
+            border: 1px solid #2D3748;
+            color: #E2E8F0;
+            transition: all 0.3s ease;
+        }
+        .modern-input:focus {
+            border-color: #EF4444;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+            outline: none;
+        }
+
+        /* Buton Grubu (Input + Buton yan yana) */
+        .cmd-group {
+            display: flex;
+            background: #1A2234;
+            border: 1px solid #2D3748;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .cmd-group:focus-within {
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .cmd-group input {
+            background: transparent;
+            border: none;
+            flex: 1;
+            padding: 0.6rem 0.75rem;
+            color: #E2E8F0;
+            font-size: 0.75rem;
+            outline: none;
+            width: 100%;
+        }
+        .cmd-group button {
+            padding: 0.6rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .member-checkbox {
+            accent-color: #a855f7;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-gray-300 h-screen overflow-hidden flex flex-col">
+
+    <header class="bg-[#111827] border-b border-gray-800 p-4 flex justify-between items-center z-10 relative">
+        <div class="absolute bottom-0 left-0 h-[2px] w-full bg-gradient-to-r from-red-600 via-purple-600 to-blue-600"></div>
+        <div class="flex items-center gap-4">
+            <div class="p-2 bg-gray-800 rounded-lg shadow-inner">
+                <i class="fa-solid fa-microchip text-red-500 text-2xl animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-white">HBV <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">CORE PWM</span></h1>
+                <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Gelişmiş Sürü Yönetim Paneli</p>
+            </div>
+        </div>
+        <div class="flex gap-6 text-sm font-semibold">
+            <div class="flex items-center gap-2 bg-gray-800 px-4 py-1.5 rounded-full border border-gray-700">
+                <div class="w-2.5 h-2.5 rounded-full bg-green-500 animate-ping absolute"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-green-500 relative"></div>
+                <span class="text-gray-300 text-xs">Motor: Aktif & Bekliyor</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex p-5 gap-5 overflow-hidden">
+
+        <aside class="w-1/2 glass-panel rounded-xl flex flex-col overflow-hidden transition-all glow-red relative" id="left-panel">
+            
+            <div class="flex p-2 gap-2 bg-[#0F172A] border-b border-gray-800">
+                <button onclick="switchTab('hesaplar')" id="tab-hesaplar" class="flex-1 py-2 rounded-lg bg-gray-800 font-semibold text-red-400 shadow-sm transition-all text-sm"><i class="fa-solid fa-users mr-2"></i> Profiller</button>
+                <button onclick="switchTab('gruplar')" id="tab-gruplar" class="flex-1 py-2 rounded-lg hover:bg-gray-800/50 font-medium text-gray-400 transition-all text-sm"><i class="fa-solid fa-network-wired mr-2"></i> Sürüler</button>
+                <button onclick="switchTab('ayarlar')" id="tab-ayarlar" class="flex-1 py-2 rounded-lg hover:bg-gray-800/50 font-medium text-gray-400 transition-all text-sm"><i class="fa-solid fa-gear mr-2"></i> Ayarlar</button>
+            </div>
+
+            <div id="content-hesaplar" class="p-5 flex-1 flex flex-col overflow-hidden">
+                <div class="flex justify-between items-center mb-5">
+                    <h2 class="font-bold text-white text-lg"><i class="fa-solid fa-id-card text-red-500 mr-2"></i>Profil Envanteri</h2>
+                    <button onclick="yeniHesapModalAc()" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-red-900/50 transition-all"><i class="fa-solid fa-plus mr-1"></i> Yeni Ekle</button>
+                </div>
+
+                <div class="bg-[#1A2234] rounded-t-lg p-3 grid grid-cols-5 gap-3 text-xs text-gray-400 font-bold uppercase tracking-wider text-center border-b border-gray-700">
+                    <div>Profil ID</div><div>Oyuncu</div><div>Proxy</div><div>Durum</div><div>Kontrol</div>
+                </div>
+                <div id="hesap-listesi" class="flex flex-col gap-2 flex-1 overflow-y-auto pr-2 pt-2 pb-2">
+                    </div>
+            </div>
+
+            <div id="content-gruplar" class="p-5 flex-1 flex flex-col overflow-hidden hidden">
+                <div class="flex justify-between items-center mb-5">
+                    <h2 class="font-bold text-white text-lg"><i class="fa-solid fa-network-wired text-purple-500 mr-2"></i>Sürü Operasyonları</h2>
+                    <button onclick="yeniGrupModalAc()" class="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-purple-900/50 transition-all"><i class="fa-solid fa-plus mr-1"></i> Sürü Kur</button>
+                </div>
+
+                <div class="bg-[#1A2234] rounded-t-lg p-3 grid grid-cols-5 gap-3 text-xs text-gray-400 font-bold uppercase tracking-wider text-center border-b border-gray-700">
+                    <div>Manga Adı</div><div>Lider</div><div>Asker</div><div>Strateji</div><div>Ateşle</div>
+                </div>
+                <div id="grup-listesi" class="flex flex-col gap-2 flex-1 overflow-y-auto pr-2 pt-2 pb-2">
+                    </div>
+            </div>
+
+            <div id="content-ayarlar" class="p-5 flex-1 flex flex-col overflow-y-auto hidden">
+                <h2 class="font-bold text-white text-lg mb-6"><i class="fa-solid fa-sliders text-blue-500 mr-2"></i>Motor Optimizasyonu</h2>
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Chrome Executable Yolu</label>
+                        <input type="text" id="set-chrome-path" value="C:\Program Files\Google\Chrome\Application\chrome.exe" class="modern-input w-full p-3 rounded-lg text-sm font-mono text-blue-300">
+                    </div>
+                    <div class="flex justify-between items-center bg-[#1A2234] p-4 rounded-lg border border-gray-700">
+                        <div>
+                            <p class="text-sm font-bold text-gray-200">Process Arası Gecikme</p>
+                            <p class="text-[10px] text-gray-500 mt-1">Tarayıcıların eşzamanlı açılmasını önler (Milisaniye)</p>
+                        </div>
+                        <input type="number" id="set-delay" value="1000" class="modern-input w-24 p-2 rounded-lg text-center font-bold text-yellow-400">
+                    </div>
+                    <button onclick="ayarlariKaydet()" class="w-full mt-4 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-lg transition-all shadow-lg border border-gray-600">
+                        <i class="fa-solid fa-save mr-2"></i> Ayarları Sisteme İşle
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <section class="w-1/2 flex flex-col gap-5 overflow-hidden">
+
+            <div class="glass-panel rounded-xl p-5 flex flex-col shadow-lg border-t-[3px] border-t-red-600">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-white"><i class="fa-solid fa-bolt text-yellow-400 mr-2"></i>Ana Kontrol Modülü</h2>
+                    <div class="flex gap-2">
+                        <button onclick="tumunuBaslat()" class="bg-gray-800 hover:bg-green-600/20 text-green-400 border border-green-600/50 px-3 py-1.5 rounded-md text-xs font-bold transition-all"><i class="fa-solid fa-play mr-1"></i> Tümünü Başlat</button>
+                        <button onclick="tumunuKapat()" class="bg-gray-800 hover:bg-red-600/20 text-red-400 border border-red-600/50 px-3 py-1.5 rounded-md text-xs font-bold transition-all"><i class="fa-solid fa-stop mr-1"></i> Tümünü Kapat</button>
+                    </div>
+                </div>
+
+                <div class="bg-[#1A2234] p-4 rounded-lg border border-gray-700">
+                    <label class="block text-[10px] font-bold text-purple-400 mb-2 uppercase tracking-wider">Hızlı Lider Seçimi (Manuel Operasyon)</label>
+                    <div class="flex gap-3">
+                        <select id="swarm-commander" class="modern-input flex-1 p-2 rounded-lg text-xs font-semibold"></select>
+                        <button onclick="swarmBaslat()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-lg"><i class="fa-solid fa-users-rays mr-1"></i> Kur & Topla</button>
+                        <button onclick="swarmOyunuBaslat()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-lg"><i class="fa-solid fa-fire mr-1"></i> Başlat</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-xl p-5 flex flex-col flex-1 shadow-lg border-t-[3px] border-t-blue-500 overflow-y-auto">
+                <div class="flex justify-between items-center border-b border-gray-700/50 pb-3 mb-4">
+                    <h2 class="font-bold text-white"><i class="fa-solid fa-satellite-dish text-blue-400 mr-2"></i>Saha Komuta Merkezi</h2>
+                    <button onclick="profilListesiniGuncelle()" class="text-gray-500 hover:text-white transition-all bg-gray-800 p-1.5 rounded-md"><i class="fa-solid fa-sync"></i></button>
+                </div>
+
+                <div class="mb-5">
+                    <label class="block text-[10px] font-bold text-cyan-400 mb-2 uppercase tracking-wider">📡 Hedef Zombi / Asker Seç</label>
+                    <select id="target-profile" class="modern-input w-full p-2.5 rounded-lg text-sm text-yellow-400 font-bold shadow-inner border-cyan-800/50"></select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-x-4 gap-y-6">
+                    
+                    <div>
+                        <h3 class="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider border-b border-gray-800 pb-1">Lobi İşlemleri</h3>
+                        <div class="space-y-2">
+                            <div class="cmd-group">
+                                <input type="text" id="cmd-join" placeholder="Oda ID (örn: id123)">
+                                <button onclick="emirGonder('JOIN_ROOM', document.getElementById('cmd-join').value)" class="bg-indigo-600 hover:bg-indigo-700 text-white"><i class="fa-solid fa-door-open"></i></button>
+                            </div>
+                            <div class="cmd-group">
+                                <input type="number" id="cmd-slot" placeholder="Koltuk No (0-15)">
+                                <button onclick="emirGonder('SET_SLOT', document.getElementById('cmd-slot').value)" class="bg-blue-600 hover:bg-blue-700 text-white"><i class="fa-solid fa-chair"></i></button>
+                            </div>
+                            <div class="flex gap-2 pt-1">
+                                <button onclick="emirGonder('START_GAME', '')" class="flex-1 bg-green-600 hover:bg-green-700 py-2 rounded-lg text-xs font-bold text-white transition-all"><i class="fa-solid fa-play mr-1"></i> Başlat</button>
+                                <button onclick="emirGonder('LEAVE_ROOM', '')" class="flex-1 bg-orange-600 hover:bg-orange-700 py-2 rounded-lg text-xs font-bold text-white transition-all"><i class="fa-solid fa-right-from-bracket mr-1"></i> Çık</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div>                   
+                        <h3 class="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider border-b border-gray-800 pb-1">Saha Kontrolü</h3>
+                        <div class="space-y-2">
+                            <div class="cmd-group">
+                                <input type="text" id="cmd-vote" placeholder="Hedef ID (Oy Ver)">
+                                <button onclick="emirGonder('VOTE', document.getElementById('cmd-vote').value)" class="bg-red-600 hover:bg-red-700 text-white"><i class="fa-solid fa-gavel"></i></button>
+                            </div>
+                            <div class="cmd-group">
+                                <input type="text" id="cmd-skill" placeholder='{"role":"seer", "target":"123"}'>
+                                <button onclick="emirGonder('USE_SKILL', document.getElementById('cmd-skill').value)" class="bg-purple-600 hover:bg-purple-700 text-white"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                            </div>
+                            <div class="cmd-group">
+                                <input type="text" id="cmd-chat" placeholder="Public Mesaj...">
+                                <button onclick="hizliChatGonder()" class="bg-slate-600 hover:bg-slate-700 text-white"><i class="fa-solid fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                       <div>
+                            <h3 class="text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-wider border-b border-gray-800 pb-1">⚙️ Gelişmiş Oda Şablonu (Host Settings)</h3>
+                            <div class="bg-[#111827] border border-gray-700 rounded-lg p-3 space-y-3 shadow-inner">
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[9px] text-gray-400 font-bold uppercase mb-1 block">Oda Adı</label>
+                                        <input type="text" id="room-name-input" placeholder="MumkunKul's game" value="MumkunKul's game" class="modern-input w-full p-1.5 rounded text-[11px] font-bold text-yellow-400">
+                                    </div>
+                                    <div>
+                                        <label class="text-[9px] text-gray-400 font-bold uppercase mb-1 block">Şifre (Boş = Herkese Açık)</label>
+                                        <input type="text" id="room-pass-input" placeholder="Oda Şifresi" class="modern-input w-full p-1.5 rounded text-[11px] text-red-400 font-mono">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-4 gap-2 bg-[#1A2234] p-2 rounded border border-gray-800">
+                                    <div>
+                                        <label class="text-[9px] text-cyan-400 font-bold uppercase mb-1 block text-center" title="Start Game Delay">Başla(Sn)</label>
+                                        <input type="number" id="room-start-delay" value="15" class="modern-input w-full p-1.5 rounded text-[11px] font-bold text-center">
+                                    </div>
+                                    <div>
+                                        <label class="text-[9px] text-cyan-400 font-bold uppercase mb-1 block text-center" title="Day Discussion">Gündüz(Sn)</label>
+                                        <input type="number" id="room-day-time" value="60" class="modern-input w-full p-1.5 rounded text-[11px] font-bold text-center">
+                                    </div>
+                                    <div>
+                                        <label class="text-[9px] text-cyan-400 font-bold uppercase mb-1 block text-center" title="Day Voting">Oylama(Sn)</label>
+                                        <input type="number" id="room-vote-time" value="30" class="modern-input w-full p-1.5 rounded text-[11px] font-bold text-center">
+                                    </div>
+                                    <div>
+                                        <label class="text-[9px] text-cyan-400 font-bold uppercase mb-1 block text-center" title="Night Duration">Gece(Sn)</label>
+                                        <input type="number" id="room-night-time" value="30" class="modern-input w-full p-1.5 rounded text-[11px] font-bold text-center">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-x-2 gap-y-2 bg-[#0F172A] p-2 rounded border border-gray-800 max-h-[140px] overflow-y-auto custom-scroll">
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-private" class="member-checkbox w-3 h-3"> 🔒 Gizli Oda (privateGame)
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-friends-invite" class="member-checkbox w-3 h-3"> ✉️ Herkes Davet Edebilir
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-hiderole" class="member-checkbox w-3 h-3"> ⚰️ Ölünce Rolü Gizle
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-talismans" class="member-checkbox w-3 h-3" checked> ✨ Tılsımlar Açık
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-voice" class="member-checkbox w-3 h-3"> 🎙️ Sesli Sohbet (voiceEnabled)
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-regular-xp" class="member-checkbox w-3 h-3"> 📈 Normal XP
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-skip" class="member-checkbox w-3 h-3" checked> ⏭️ Tartışma Geçilebilir
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-votes-hidden" class="member-checkbox w-3 h-3"> 🗳️ Oylar Gizli
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-prevent-autostart" class="member-checkbox w-3 h-3"> 🛑 Dolunca Oto Başlamayı Engelle
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-disable-spec-chat" class="member-checkbox w-3 h-3"> 👁️ İzleyiciler Ölü Chat'i Göremez
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-rolecards" class="member-checkbox w-3 h-3"> 🚫 Rol Kartları Kapalı
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-row-wars" class="member-checkbox w-3 h-3"> ⚔️ Row Wars (Satır Savaşları)
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-assassins" class="member-checkbox w-3 h-3"> 🗡️ Suikastçiler Sözleşmesi
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-all-coupled" class="member-checkbox w-3 h-3"> 💘 Herkes Aşık
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-mandatory-vote" class="member-checkbox w-3 h-3"> ⚖️ Zorunlu Oylama
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-unleashed" class="member-checkbox w-3 h-3"> 🌪️ Serbest Elementler (Unleashed)
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-hot-potato" class="member-checkbox w-3 h-3"> 🥔 Sıcak Patates
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-sepia" class="member-checkbox w-3 h-3"> 🎞️ Sepya Efekti
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-9player" class="member-checkbox w-3 h-3"> 👥 9 Oyunculu Mod
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-25player" class="member-checkbox w-3 h-3"> 🚌 25 Oyunculu Mod
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-honor" class="member-checkbox w-3 h-3"> 🏅 Onur Modu
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-rose-trading" class="member-checkbox w-3 h-3"> 🌹 Gül Takası
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-private-chat" class="member-checkbox w-3 h-3"> 💬 Özel Sohbet (privateChat)
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-day-private-chat" class="member-checkbox w-3 h-3"> ☀️ Gündüz Özel Sohbet
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-proximity" class="member-checkbox w-3 h-3"> 📍 Yakınlık Sohbeti (Proximity)
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-random-phase" class="member-checkbox w-3 h-3"> 🎲 Rastgele Aşama Süresi
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-last-will" class="member-checkbox w-3 h-3"> 📜 Vasiyet Açık (lastWill)
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-grid-wars" class="member-checkbox w-3 h-3"> 🔲 Grid Wars
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-anon" class="member-checkbox w-3 h-3"> 🎭 Anonim Oyuncular
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-drafting" class="member-checkbox w-3 h-3"> 🎴 Drafting Modu
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-chat-bubbles" class="member-checkbox w-3 h-3" checked> 💭 Sohbet Balonları
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-[9px] font-medium text-gray-300 hover:text-white">
+                                        <input type="checkbox" id="cb-host-mode" class="member-checkbox w-3 h-3"> 👑 Host Modu
+                                    </label>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <div>
+                                        <input type="text" id="room-pinned-msg" placeholder="📌 Odaya sabitlenecek mesaj (Opsiyonel)" class="modern-input w-full p-1.5 rounded text-[10px] italic border-gray-700">
+                                    </div>
+                                    <div>
+                                        <select id="room-template-select" class="modern-input w-full p-1.5 rounded text-[11px] bg-gray-800 text-purple-300 font-bold border-purple-900/50">
+                                            <option value='["villager","villager","villager","villager","villager","villager","villager","villager","villager","villager","villager","villager","villager","villager","villager","villager"]'>🌾 16x Köylü (MumkunKul Farm Modu)</option>
+                                            <option value='["priest","gunner","gambler","detective","medium","mayor","junior-werewolf","nightmare-werewolf","wolf-shaman","wolf-seer","anarchist","siren","flower-child","loudmouth","doctor","seer-apprentice"]'>🗡️ Standart 16'lı Karma</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button onclick="odaAyarlariniGonder()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-500 hover:to-purple-600 text-white py-2 rounded text-[11px] font-bold transition-all shadow-lg border border-indigo-500/30 flex justify-center items-center gap-2">
+                                    <i class="fa-solid fa-microchip animate-pulse"></i> Matrix'e Enjekte Et
+                                </button>
+                            </div>
+                       </div>
+                </div>
+                
+                <div class="mt-5 pt-4 border-t border-gray-800/50 grid grid-cols-4 gap-2">
+                    <button onclick="emirGonder('SPIN_GOLD', '')" class="bg-[#1A2234] hover:bg-yellow-600/20 border border-gray-700 hover:border-yellow-500/50 text-yellow-500 py-2 rounded-lg text-xs font-bold transition-all"><i class="fa-solid fa-coins mb-1 block text-lg"></i> Altın</button>
+                    <button onclick="emirGonder('SPIN_ROSE', '')" class="bg-[#1A2234] hover:bg-pink-600/20 border border-gray-700 hover:border-pink-500/50 text-pink-400 py-2 rounded-lg text-xs font-bold transition-all"><i class="fa-solid fa-fan mb-1 block text-lg"></i> Gül</button>
+                    <button onclick="emirGonder('GET_REPORT', '')" class="bg-[#1A2234] hover:bg-cyan-600/20 border border-gray-700 hover:border-cyan-500/50 text-cyan-400 py-2 rounded-lg text-xs font-bold transition-all"><i class="fa-solid fa-file-waveform mb-1 block text-lg"></i> Rapor</button>
+                    <button onclick="emirGonder('REFRESH', '')" class="bg-[#1A2234] hover:bg-red-600/20 border border-gray-700 hover:border-red-500/50 text-red-500 py-2 rounded-lg text-xs font-bold transition-all"><i class="fa-solid fa-rotate-right mb-1 block text-lg"></i> Yenile</button>
+                </div>
+            </div>
+
+            <div class="bg-[#0B0F19] rounded-xl border border-gray-800 flex flex-col h-40 shadow-inner overflow-hidden relative">
+                <div class="bg-[#111827] px-3 py-1.5 flex justify-between items-center border-b border-gray-800">
+                    <div class="flex items-center gap-2">
+                        <div class="flex gap-1.5">
+                            <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-[10px] font-mono text-gray-500 ml-2">YSS_TERMINAL_v2.0.sh</span>
+                    </div>
+                    <button onclick="document.getElementById('terminal-logs').innerHTML='<div class=\'text-green-500\'>[SYSTEM] Terminal temizlendi. Emir bekleniyor.</div>'" class="text-gray-500 hover:text-white text-xs"><i class="fa-solid fa-eraser"></i></button>
+                </div>
+                <div class="p-3 flex-1 overflow-y-auto font-mono text-[10px] leading-relaxed" id="terminal-logs">
+                    <div class="text-green-500">> SYSTEM BOOT SEQUENCE INITIATED...</div>
+                    <div class="text-green-500">> Tüm silahlar yüklendi. Emir bekleniyor.</div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <div id="hesap-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex justify-center items-center z-50">
+        <div class="bg-[#111827] p-6 rounded-xl border border-red-500/50 w-[400px] shadow-[0_0_30px_rgba(239,68,68,0.15)] relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 to-orange-500"></div>
+            <h3 id="modal-baslik" class="font-bold text-lg mb-5 text-white flex items-center"><i class="fa-solid fa-folder-plus text-red-500 mr-2"></i> Yeni Profil Oluştur</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Sistem İçi Profil Adı</label>
+                    <input type="text" id="h-profil" placeholder="Örn: Zombi_1" class="modern-input w-full p-2.5 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Oyun İçi Kullanıcı Adı (Nick)</label>
+                    <input type="text" id="h-nick" placeholder="Örn: DangerKing" class="modern-input w-full p-2.5 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Proxy Konfigürasyonu (Opsiyonel)</label>
+                    <input type="text" id="h-proxy" placeholder="ip:port:user:pass" class="modern-input w-full p-2.5 rounded-lg text-sm font-mono text-blue-300">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-800">
+                <button onclick="toggleModal('hesap-modal')" class="px-5 py-2 bg-transparent border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-all text-sm font-semibold">İptal</button>
+                <button onclick="hesapKaydet()" class="px-5 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-lg transition-all text-sm font-bold shadow-lg shadow-red-900/50">Sisteme Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="grup-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex justify-center items-center z-50">
+        <div class="bg-[#111827] p-6 rounded-xl border border-purple-500/50 w-[450px] shadow-[0_0_30px_rgba(168,85,247,0.15)] relative overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 to-blue-500"></div>
+            <h3 id="grup-modal-baslik" class="font-bold text-lg mb-5 text-white flex items-center"><i class="fa-solid fa-network-wired text-purple-500 mr-2"></i> Sürü Grubu Oluştur</h3>
+
+            <div class="flex flex-col gap-4 flex-1 overflow-y-auto pr-2 custom-scroll">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Sürü Kod Adı</label>
+                    <input type="text" id="g-adi" placeholder="Örn: Gece Nöbetçileri" class="modern-input w-full p-2.5 rounded-lg text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-yellow-400 mb-1 uppercase">👑 Operasyon Lideri</label>
+                    <select id="g-lider" class="modern-input w-full p-2.5 rounded-lg text-sm text-yellow-400 font-semibold border-yellow-900/30"></select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-cyan-400 mb-1 uppercase">Sürü Yapay Zeka Stratejisi</label>
+                    <select id="g-strateji" class="modern-input w-full p-2.5 rounded-lg text-sm border-cyan-900/30">
+                        <option value="default">Standart (Oto Slot & Hazır)</option>
+                        <option value="aggressive">Agresif (Oto Linç & Rol Claim)</option>
+                        <option value="passive">Hayalet (Sadece XP Kas & Sus)</option>
+                    </select>
+                </div>
+
+                <div class="mt-2 bg-[#1A2234] p-4 rounded-lg border border-gray-800">
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2 mb-3">
+                        <label class="text-[10px] font-bold text-gray-300 uppercase tracking-wider">⚔️ Operatörler (Askerler)</label>
+                        <span id="secilen-asker-sayisi" class="text-[10px] font-bold bg-gray-900 text-gray-400 px-2 py-1 rounded border border-gray-700">0 / 7 Seçildi</span>
+                    </div>
+                    <div id="g-uyeler-container" class="max-h-[160px] overflow-y-auto grid grid-cols-2 gap-2 pr-1">
+                        </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-800">
+                <button onclick="toggleModal('grup-modal')" class="px-5 py-2 bg-transparent border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-all text-sm font-semibold">İptal</button>
+                <button onclick="grupKaydet()" class="px-5 py-2 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 text-white rounded-lg transition-all text-sm font-bold shadow-lg shadow-purple-900/50">Manga Kur</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Veritabanı Değişkenleri
+        let hesaplar = JSON.parse(localStorage.getItem('hbv_profiller')) || [];
+        let gruplar = JSON.parse(localStorage.getItem('hbv_gruplar')) || [];
+        let duzenlenenHesapId = null;
+        let duzenlenenGrupId = null;
+
+        window.onload = () => {
+            hesapListesiCiz();
+            grupListesiCiz();
+            profilListesiniGuncelle();
+            // 🔥 YENİ: Sayfa açıldığında kaydedilmiş gecikmeyi kutuya yaz
+            const savedDelay = localStorage.getItem('hbv_delay') || 1000;
+            document.getElementById('set-delay').value = savedDelay;
+        };
+
+        // --- SEKME YÖNETİMİ ---
+        function switchTab(tab) {
+            document.getElementById('content-hesaplar').classList.toggle('hidden', tab !== 'hesaplar');
+            document.getElementById('content-gruplar').classList.toggle('hidden', tab !== 'gruplar');
+            document.getElementById('content-ayarlar').classList.toggle('hidden', tab !== 'ayarlar');
+
+            const sekmeler = ['hesaplar', 'gruplar', 'ayarlar'];
+            sekmeler.forEach(t => {
+                let el = document.getElementById(`tab-${t}`);
+                el.className = 'flex-1 py-2 rounded-lg hover:bg-gray-800/50 font-medium text-gray-400 transition-all text-sm';
+            });
+
+            let aktifRenk = tab === 'hesaplar' ? 'bg-gray-800 font-semibold text-red-400 shadow-sm' : 
+                           (tab === 'gruplar' ? 'bg-gray-800 font-semibold text-purple-400 shadow-sm' : 
+                                                'bg-gray-800 font-semibold text-blue-400 shadow-sm');
+            document.getElementById(`tab-${tab}`).className = `flex-1 py-2 rounded-lg transition-all text-sm ${aktifRenk}`;
+            
+            // Glow Rengi Güncelleme
+            let leftPanel = document.getElementById('left-panel');
+            leftPanel.classList.remove('glow-red', 'glow-purple');
+            if(tab === 'hesaplar') leftPanel.classList.add('glow-red');
+            if(tab === 'gruplar') leftPanel.classList.add('glow-purple');
+        }
+
+        // --- ORTAK FONKSİYONLAR ---
+        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+
+        function logYaz(msg, color = 'text-white') {
+            const term = document.getElementById('terminal-logs');
+            term.innerHTML += `<div class="flex gap-2 mb-1"><span class="text-gray-600 opacity-50">></span><span class="${color}">${msg}</span></div>`;
+            term.scrollTop = term.scrollHeight;
+        }
+
+        async function emirGonder(komut, veri) {
+            const secilenProfil = document.getElementById('target-profile').value;
+            if (!secilenProfil) return logYaz(`[HATA] Emir göndermek için hedef seçin!`, 'text-red-500 font-bold');
+
+            if ((komut === 'JOIN_ROOM' || komut === 'SET_SLOT' || komut === 'VOTE' || komut === 'USE_SKILL') && !veri) {
+                return logYaz(`[HATA] Bu komut için yanındaki kutucuğa değer girmelisiniz!`, 'text-orange-400 font-bold');
+            }
+
+            logYaz(`[KOMUTA] '${komut}' -> Hedef: ${secilenProfil}`, 'text-yellow-400');
+            fetchKomutGonder(secilenProfil, komut, veri.toString());
+        }
+
+        async function fetchKomutGonder(profil, komut, veri) {
+            try {
+                const response = await fetch('/api/browser/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ Profil: profil, Komut: komut, Veri: veri })
+                });
+                const result = await response.json();
+                if (result.success) logYaz(`[API] İletildi.`, 'text-green-500');
+                else logYaz(`[API] HATA: ${result.message}`, 'text-red-500');
+            } catch (error) {
+                logYaz(`[API] Ulaşılamıyor!`, 'text-red-500');
+            }
+        }
+
+        function profilListesiniGuncelle() {
+            const selectBox = document.getElementById('target-profile');
+            const swarmBox = document.getElementById('swarm-commander');
+            selectBox.innerHTML = '<option value="">Lütfen Profil Seçin</option>';
+            swarmBox.innerHTML = '<option value="">Lütfen Lider Profil Seçin</option>';
+            hesaplar.forEach(h => {
+                let optionHTML = `<option value="${h.nick}">${h.profil} (${h.nick})</option>`;
+                selectBox.innerHTML += optionHTML;
+                swarmBox.innerHTML += optionHTML;
+            });
+            grupSecenekleriniGuncelle();
+        }
+
+        // --- PROFİL (HESAP) YÖNETİMİ ---
+        function yeniHesapModalAc() {
+            duzenlenenHesapId = null;
+            document.getElementById('modal-baslik').innerHTML = '<i class="fa-solid fa-folder-plus text-red-500 mr-2"></i> Yeni Profil Oluştur';
+            document.getElementById('h-profil').value = '';
+            document.getElementById('h-nick').value = '';
+            document.getElementById('h-proxy').value = '';
+            toggleModal('hesap-modal');
+        }
+
+        function hesapDuzenleModalAc(id) {
+            const h = hesaplar.find(x => x.id === id);
+            if (!h) return;
+            duzenlenenHesapId = id;
+            document.getElementById('modal-baslik').innerHTML = '<i class="fa-solid fa-pen text-blue-500 mr-2"></i> Profili Düzenle';
+            document.getElementById('h-profil').value = h.profil;
+            document.getElementById('h-nick').value = h.nick;
+            document.getElementById('h-proxy').value = h.proxy || '';
+            toggleModal('hesap-modal');
+        }
+
+        function hesapKaydet() {
+            const profil = document.getElementById('h-profil').value;
+            if (!profil) return alert("Zorunlu!");
+
+            // --- YENİ: SABİT KİMLİK (FINGERPRINT) ÜRETİCİSİ ---
+            const uas = [
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            ];
+            const resolutions = [
+                { w: 1920, h: 1080 },
+                { w: 1366, h: 768 },
+                { w: 1536, h: 864 },
+                { w: 1440, h: 900 }
+            ];
+
+            if (duzenlenenHesapId) {
+                const index = hesaplar.findIndex(x => x.id === duzenlenenHesapId);
+                if (index !== -1) {
+                    hesaplar[index].profil = profil;
+                    hesaplar[index].nick = document.getElementById('h-nick').value || 'Bilinmiyor';
+                    hesaplar[index].proxy = document.getElementById('h-proxy').value.trim();
+                    logYaz(`[DB] Profil güncellendi: ${profil}`, 'text-blue-400');
+                }
+            } else {
+                let randomUa = uas[Math.floor(Math.random() * uas.length)];
+                let randomRes = resolutions[Math.floor(Math.random() * resolutions.length)];
+
+                hesaplar.push({
+                    id: Date.now(),
+                    profil: profil,
+                    nick: document.getElementById('h-nick').value || 'Bilinmiyor',
+                    proxy: document.getElementById('h-proxy').value.trim(),
+                    userAgent: randomUa,
+                    viewportWidth: randomRes.w,
+                    viewportHeight: randomRes.h
+                });
+                logYaz(`[DB] Yeni profil eklendi: ${profil} (Maske: ${randomRes.w}x${randomRes.h})`, 'text-green-400');
+            }
+
+            toggleModal('hesap-modal');
+            hesapListesiCiz();
+            profilListesiniGuncelle();
+            localStorage.setItem('hbv_profiller', JSON.stringify(hesaplar));
+            duzenlenenHesapId = null;
+        }
+
+        function hesapListesiCiz() {
+            const div = document.getElementById('hesap-listesi'); div.innerHTML = '';
+            hesaplar.forEach(h => {
+                div.innerHTML += `
+                    <div class="bg-[#111827] border border-gray-800 rounded-lg p-3 grid grid-cols-5 gap-3 text-[11px] items-center text-center hover:bg-gray-800/80 transition-all shadow-sm">
+                        <div class="font-bold text-red-400">${h.profil}</div>
+                        <div class="truncate text-gray-300 font-medium" title="${h.nick}">${h.nick}</div>
+                        <div class="truncate text-gray-600" title="${h.proxy}">...</div>
+                        <div><span id="status-${h.id}" class="bg-gray-900 text-gray-500 border border-gray-700 px-2 py-1 rounded text-[9px] font-bold">KAPALI</span></div>
+                        <div class="flex justify-center gap-3">
+                            <button onclick="hesapBaslat(${h.id})" class="text-gray-400 hover:text-green-500 hover:scale-110 transition" title="Başlat"><i class="fa-solid fa-play"></i></button>
+                            <button onclick="hesapDuzenleModalAc(${h.id})" class="text-gray-400 hover:text-blue-500 hover:scale-110 transition" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="hesapSil(${h.id})" class="text-gray-400 hover:text-red-500 hover:scale-110 transition" title="Sil"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function hesapSil(id) {
+            if(!confirm("Emin misin komutanım?")) return;
+            hesaplar = hesaplar.filter(x => x.id !== id);
+            hesapListesiCiz();
+            profilListesiniGuncelle();
+            localStorage.setItem('hbv_profiller', JSON.stringify(hesaplar));
+        }
+
+        // --- GRUP (SÜRÜ) YÖNETİMİ ---
+        function grupSecenekleriniGuncelle() {
+            const liderBox = document.getElementById('g-lider');
+            const uyelerContainer = document.getElementById('g-uyeler-container');
+
+            liderBox.innerHTML = '<option value="">Lideri Seçin...</option>';
+            uyelerContainer.innerHTML = '';
+
+            hesaplar.forEach(h => {
+                liderBox.innerHTML += `<option value="${h.nick}">${h.profil} (${h.nick})</option>`;
+                uyelerContainer.innerHTML += `
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-gray-800 rounded-md cursor-pointer border border-transparent hover:border-gray-700 transition">
+                        <input type="checkbox" class="member-checkbox" value="${h.nick}" onchange="uyeSayaciGuncelle()">
+                        <span class="text-xs truncate font-medium text-gray-300" title="${h.profil} - ${h.nick}">${h.profil}</span>
+                    </label>
+                `;
+            });
+        }
+
+        function uyeSayaciGuncelle() {
+            const secilenler = document.querySelectorAll('.member-checkbox:checked').length;
+            const textEl = document.getElementById('secilen-asker-sayisi');
+            textEl.innerText = `${secilenler} / 7 Seçildi`;
+            if(secilenler > 7) {
+                textEl.classList.add('text-red-500', 'border-red-500/50');
+            } else {
+                textEl.classList.remove('text-red-500', 'border-red-500/50');
+            }
+        }
+
+        function yeniGrupModalAc() {
+            duzenlenenGrupId = null;
+            document.getElementById('grup-modal-baslik').innerHTML = '<i class="fa-solid fa-network-wired text-purple-500 mr-2"></i> Yeni Sürü Grubu Oluştur';
+            document.getElementById('g-adi').value = '';
+            document.getElementById('g-lider').value = '';
+            document.getElementById('g-strateji').value = 'default';
+            document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = false);
+            uyeSayaciGuncelle();
+            toggleModal('grup-modal');
+        }
+
+        function grupDuzenleModalAc(id) {
+            const g = gruplar.find(x => x.id === id);
+            if (!g) return;
+            duzenlenenGrupId = id;
+
+            document.getElementById('grup-modal-baslik').innerHTML = '<i class="fa-solid fa-pen text-blue-500 mr-2"></i> Sürüyü Düzenle';
+            document.getElementById('g-adi').value = g.adi;
+            document.getElementById('g-lider').value = g.lider;
+            document.getElementById('g-strateji').value = g.strateji || 'default';
+
+            document.querySelectorAll('.member-checkbox').forEach(cb => {
+                cb.checked = g.uyeler.includes(cb.value);
+            });
+
+            uyeSayaciGuncelle();
+            toggleModal('grup-modal');
+        }
+
+        function grupKaydet() {
+            const adi = document.getElementById('g-adi').value;
+            const lider = document.getElementById('g-lider').value;
+            const strateji = document.getElementById('g-strateji').value;
+            const secilenUyeler = Array.from(document.querySelectorAll('.member-checkbox:checked')).map(cb => cb.value);
+
+            if (!adi || !lider) return alert("Grup adı ve Lider seçimi zorunludur!");
+            if (secilenUyeler.includes(lider)) return alert("Lider, aynı zamanda asker listesinde olamaz!");
+            if (secilenUyeler.length > 7) return alert("En fazla 7 asker seçebilirsin!");
+
+            if (duzenlenenGrupId) {
+                const index = gruplar.findIndex(x => x.id === duzenlenenGrupId);
+                if (index !== -1) {
+                    gruplar[index] = { ...gruplar[index], adi, lider, strateji, uyeler: secilenUyeler };
+                    logYaz(`[DB] Grup güncellendi: ${adi}`, 'text-purple-400');
+                }
+            } else {
+                gruplar.push({ id: Date.now(), adi, lider, strateji, uyeler: secilenUyeler });
+                logYaz(`[DB] Yeni Sürü eklendi: ${adi}`, 'text-purple-400');
+            }
+
+            toggleModal('grup-modal');
+            grupListesiCiz();
+            localStorage.setItem('hbv_gruplar', JSON.stringify(gruplar));
+            duzenlenenGrupId = null;
+        }
+
+        function grupListesiCiz() {
+            const div = document.getElementById('grup-listesi'); div.innerHTML = '';
+            gruplar.forEach(g => {
+                const stratIsim = g.strateji === 'aggressive' ? 'Agresif' : (g.strateji === 'passive' ? 'Hayalet' : 'Standart');
+                div.innerHTML += `
+                    <div class="bg-[#111827] border border-gray-800 rounded-lg p-3 grid grid-cols-5 gap-2 text-[11px] items-center text-center hover:bg-gray-800/80 transition-all border-l-[3px] border-l-purple-500 shadow-sm">
+                        <div class="font-bold text-purple-400 truncate" title="${g.adi}">${g.adi}</div>
+                        <div class="text-yellow-400 font-bold truncate" title="${g.lider}">👑 ${g.lider}</div>
+                        <div class="text-gray-400 font-medium"><i class="fa-solid fa-users text-gray-600 mr-1"></i> ${g.uyeler.length}</div>
+                        <div class="text-cyan-500 font-medium">${stratIsim}</div>
+                        <div class="flex justify-center gap-4">
+                            <button onclick="grupBaslat(${g.id})" class="text-purple-500 hover:text-white hover:scale-110 transition shadow-lg" title="Ateşle"><i class="fa-solid fa-rocket"></i></button>
+                            <button onclick="grupDuzenleModalAc(${g.id})" class="text-gray-500 hover:text-blue-400 hover:scale-110 transition" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="grupSil(${g.id})" class="text-gray-500 hover:text-red-400 hover:scale-110 transition" title="Sil"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+
+        function grupSil(id) {
+            if(!confirm("Bu sürüyü komple silmek istediğine emin misin?")) return;
+            gruplar = gruplar.filter(x => x.id !== id);
+            grupListesiCiz();
+            localStorage.setItem('hbv_gruplar', JSON.stringify(gruplar));
+        }
+
+        async function grupBaslat(id) {
+            const g = gruplar.find(x => x.id === id);
+            if(!g) return;
+
+            logYaz(`[OPERASYON] ${g.adi} sürüsü ayağa kaldırılıyor...`, 'text-purple-400 font-bold');
+            
+            // Gecikmeyi çek
+            let beklemeSuresi = parseInt(document.getElementById('set-delay').value) || 1000;
+
+            // 🔥 JSON HATASINI ÇÖZEN KISIM: İsimleri detaylı pakete (BotData) çeviriyoruz!
+            const getBotData = (nickOrProfile) => {
+                const h = hesaplar.find(x => x.nick === nickOrProfile || x.profil === nickOrProfile);
+                return h ? { profil: h.profil, proxy: h.proxy || null, ua: h.userAgent || null } : { profil: nickOrProfile, proxy: null, ua: null };
+            };
+
+            const liderData = getBotData(g.lider);
+            const uyelerData = g.uyeler.map(u => getBotData(u));
+
+            // Artık lider ve uyeler dümdüz string değil, içleri proxy dolu birer obje oldu!
+            const swarmPayload = {
+                lider: liderData,
+                uyeler: uyelerData,
+                strateji: g.strateji,
+                delay: beklemeSuresi 
+            };
+
+            // Liderin profiline göre komutu C#'a ateşle
+            fetchKomutGonder(liderData.profil, 'START_SWARM_GROUP', JSON.stringify(swarmPayload));
+        }
+
+        // --- MANUEL MOTOR KOMUTLARI ---
+        async function hesapBaslat(id) {
+            const h = hesaplar.find(x => x.id === id);
+            if (h) {
+                let badge = document.getElementById(`status-${h.id}`);
+                badge.innerHTML = 'İŞLENİYOR';
+                badge.className = 'bg-yellow-900/50 text-yellow-500 border border-yellow-700/50 px-2 py-1 rounded text-[9px] font-bold animate-pulse';
+
+                const payload = {
+                    Profil: h.profil,
+                    Proxy: h.proxy,
+                    UserAgent: h.userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    ViewportWidth: h.viewportWidth || 1366,
+                    ViewportHeight: h.viewportHeight || 768
+                };
+
+                await fetch('/api/browser/launch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+        }
+        
+       async function tumunuBaslat() { 
+            // 🔥 YENİ: Sabit 500ms yerine, kutudaki değeri okuyup o kadar bekliyor
+            let beklemeSuresi = parseInt(document.getElementById('set-delay').value) || 1000;
+            for (let i = 0; i < hesaplar.length; i++) { 
+                await hesapBaslat(hesaplar[i].id); 
+                await new Promise(r => setTimeout(r, beklemeSuresi)); 
+            } 
+        }
+        async function tumunuKapat() { await fetch('/api/browser/killall', { method: 'POST' }); }
+
+        function hizliChatGonder() {
+            const msg = document.getElementById('cmd-chat').value;
+            if(!msg) return logYaz(`[HATA] Gönderilecek mesaj boş!`, 'text-red-500');
+            const payload = JSON.stringify({ type: "chat_public", msg: msg });
+            emirGonder('SEND_CHAT', payload);
+            document.getElementById('cmd-chat').value = '';
+        }
+
+        function odaAyarlariniGonder() {
+            const liderProfile = document.getElementById('target-profile').value;
+            if (!liderProfile) {
+                return logYaz(`[HATA] Ayarları uygulamak için hedef olarak Lider'i seçmelisin!`, 'text-red-500 font-bold');
+            }
+
+            // Inputları Çek
+            const odaAdi = document.getElementById('room-name-input').value || "HBV Karargahı";
+            const passwordStr = document.getElementById('room-pass-input').value.trim();
+            const minLevelVal = parseInt(document.getElementById('room-min-level') ? document.getElementById('room-min-level').value : 0) || 0;
+            
+            // Süreler (Ms'ye çevriliyor)
+            const startDelayMs = (parseInt(document.getElementById('room-start-delay').value) || 15) * 1000;
+            const dayMs = (parseInt(document.getElementById('room-day-time').value) || 60) * 1000;
+            const voteMs = (parseInt(document.getElementById('room-vote-time').value) || 30) * 1000;
+            const nightMs = (parseInt(document.getElementById('room-night-time').value) || 30) * 1000;
+            
+            const pinnedMsg = document.getElementById('room-pinned-msg').value || "";
+
+            // Rolleri Seçimden Al
+            let rolesArray = [];
+            try {
+                rolesArray = JSON.parse(document.getElementById('room-template-select').value);
+            } catch(e) {
+                rolesArray = ["villager", "villager", "villager", "villager", "villager", "villager", "villager", "villager", "villager", "villager", "villager", "villager", "villager", "villager", "villager", "villager"];
+            }
+
+            // Bütün Checkbox'ların Durumunu Topla
+            const isChecked = (id) => document.getElementById(id) ? document.getElementById(id).checked : false;
+
+            let templateObj = {
+                name: odaAdi,
+                language: "en", // İstediğin JSON'daki gibi 'en' yaptım
+                gameMode: "custom",
+                gameServerBaseUrl: "https://game.api-wolvesville.com",
+                startGameDelayInMs: startDelayMs,
+                nightDurationInMs: nightMs,
+                dayDiscussionDurationInMs: dayMs,
+                dayVotingDurationInMs: voteMs,
+                roles: rolesArray,
+                randomRolesExcludedRoles: [],
+                friendsGameEveryoneCanInvite: isChecked('cb-friends-invite'),
+                privateGame: isChecked('cb-private'),
+                talismansEnabled: isChecked('cb-talismans'),
+                hideRoleOnDeath: isChecked('cb-hiderole'),
+                hostedDate: new Date().toISOString(),
+                hasPassword: passwordStr.length > 0,
+                password: passwordStr,
+                minLevel: minLevelVal,
+                voiceEnabled: isChecked('cb-voice'),
+                regularXp: isChecked('cb-regular-xp'),
+                discussionSkipEnabled: isChecked('cb-skip'),
+                votesHidden: isChecked('cb-votes-hidden'),
+                preventAutostartIfLobbyIsFull: isChecked('cb-prevent-autostart'),
+                disableSpecSeeingDeathChat: isChecked('cb-disable-spec-chat'),
+                roleCardsDisabled: isChecked('cb-rolecards'),
+                disabledRoleCardAbilities: [],
+                isRowWars: isChecked('cb-row-wars'),
+                isGridWars: isChecked('cb-grid-wars'),
+                effectSepiaEnabled: isChecked('cb-sepia'),
+                allCoupled: isChecked('cb-all-coupled'),
+                unleashedElements: isChecked('cb-unleashed'),
+                mandatoryVote: isChecked('cb-mandatory-vote'),
+                assassinsConvention: isChecked('cb-assassins'),
+                hotPotatoEnabled: isChecked('cb-hot-potato'),
+                pinnedMessage: pinnedMsg,
+                is9PlayerGame: isChecked('cb-9player'),
+                is25PlayerGame: isChecked('cb-25player'),
+                honorEnabled: isChecked('cb-honor'),
+                customRandomRoles: [],
+                privateChatEnabled: isChecked('cb-private-chat'),
+                dayPrivateChatEnabled: isChecked('cb-day-private-chat'),
+                roseTradingEnabled: isChecked('cb-rose-trading'),
+                proximityChatEnabled: isChecked('cb-proximity'),
+                randomPhaseDuration: isChecked('cb-random-phase'),
+                lastWillEnabled: isChecked('cb-last-will'),
+                draftingEnabled: isChecked('cb-drafting'),
+                anonymousPlayersEnabled: isChecked('cb-anon'),
+                chatBubblesEnabled: isChecked('cb-chat-bubbles'),
+                hostModeEnabled: isChecked('cb-host-mode')
+            };
+            
+            // C#'a Fırlat
+            try {
+                let finalPayload = JSON.stringify(templateObj);
+                emirGonder('CHANGE_SETTINGS', finalPayload);
+                logYaz(`[SİSTEM] Gelişmiş Lobi Ayarları "${odaAdi}" başarıyla Lider'e şırıngalandı!`, 'text-indigo-400');
+            } catch(e) {
+                logYaz(`[HATA] Şablon paketi derlenemedi!`, 'text-red-500');
+            }
+        }
+        
+
+        async function swarmBaslat() {
+            const commander = document.getElementById('swarm-commander').value;
+            if (!commander) return logYaz(`[HATA] Lider bot seçilmedi!`, 'text-red-500');
+            fetchKomutGonder(commander, "SWARM_INIT", "{}");
+        }
+        
+        async function swarmOyunuBaslat() {
+            const commander = document.getElementById('swarm-commander').value;
+            if (!commander) return logYaz(`[HATA] Lider bot seçilmedi!`, 'text-red-500');
+            fetchKomutGonder(commander, "SWARM_FORCE_START", "");
+        }
+
+        // --- SİSTEM DURUMU ---
+        setInterval(async () => {
+            if (hesaplar.length === 0) return;
+            try {
+                const response = await fetch('/api/browser/status');
+                const result = await response.json();
+                if (result.success) {
+                    const activeList = result.active;
+                    hesaplar.forEach(h => {
+                        const badge = document.getElementById(`status-${h.id}`);
+                        if (!badge) return;
+                        if (activeList.includes(h.profil)) {
+                            badge.innerHTML = 'AKTİF'; 
+                            badge.className = 'bg-green-900/30 text-green-400 border border-green-700/50 px-2 py-1 rounded text-[9px] font-bold shadow-[0_0_10px_rgba(34,197,94,0.2)]';
+                        } else {
+                            if (!badge.innerHTML.includes('İŞLENİYOR')) {
+                                badge.innerHTML = 'KAPALI'; 
+                                badge.className = 'bg-gray-900 text-gray-500 border border-gray-800 px-2 py-1 rounded text-[9px] font-bold';
+                            }
+                        }
+                    });
+                }
+            } catch (error) {}
+        }, 3000);
+        function ayarlariKaydet() { 
+            // 🔥 YENİ: Kutudaki değeri sisteme kaydet
+            const delayVal = document.getElementById('set-delay').value;
+            localStorage.setItem('hbv_delay', delayVal);
+            logYaz(`[SİSTEM] İşlem arası gecikme ${delayVal} ms olarak ayarlandı.`, 'text-blue-400');
+        }
+    </script>
+</body>
+</html>

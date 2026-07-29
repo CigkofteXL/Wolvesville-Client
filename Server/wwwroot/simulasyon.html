@@ -1,0 +1,631 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>🐺 HBV - Otonom Matrix Monitörü v8.5</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            font-family: 'Poppins', sans-serif;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #f43f5e;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px rgba(244,63,94,0.4);
+        }
+
+        h2 {
+            color: #38bdf8;
+            font-size: 16px;
+            margin-top: 0;
+            border-bottom: 2px solid rgba(56,189,248,0.2);
+            padding-bottom: 8px;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 7fr 3fr;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #f43f5e;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+            button:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+                filter: brightness(1.1);
+            }
+
+        .btn-green {
+            background: #10b981;
+        }
+
+        .btn-night {
+            background: #8b5cf6;
+        }
+
+        .btn-day {
+            background: #f59e0b;
+        }
+
+        .btn-blood {
+            background: #e11d48;
+        }
+
+        .roster-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            padding: 15px;
+            border-top: 4px solid #475569;
+            border-radius: 8px;
+            font-size: 13px;
+            position: relative;
+            transition: all 0.3s ease;
+            border-left: 1px solid rgba(255,255,255,0.02);
+            border-right: 1px solid rgba(255,255,255,0.02);
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+
+            .card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            }
+
+            .card.VILLAGER {
+                border-top-color: #10b981;
+            }
+
+            .card.WEREWOLF {
+                border-top-color: #ef4444;
+            }
+
+            .card.SOLO {
+                border-top-color: #d946ef;
+            }
+
+            .card.dead {
+                opacity: 0.35;
+                filter: grayscale(100%);
+                border-top-color: #334155;
+                transform: none;
+                box-shadow: none;
+            }
+
+            .card.targeted {
+                box-shadow: 0 0 20px rgba(239,68,68,0.6);
+                animation: pulse 1s infinite;
+                border-top-color: #ef4444;
+            }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 20px rgba(239,68,68,0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 5px rgba(239,68,68,0.1);
+            }
+
+            100% {
+                box-shadow: 0 0 20px rgba(239,68,68,0.4);
+            }
+        }
+
+        .card-header {
+            font-weight: 800;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #f8fafc;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .death-badge {
+            background: #7f1d1d;
+            color: #fca5a5;
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 8px;
+            text-align: center;
+            border: 1px solid #991b1b;
+        }
+
+        .action-box {
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            min-height: 40px;
+            color: #fbbf24;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .target-text {
+            color: #f87171;
+            font-size: 12px;
+            margin-top: 3px;
+            font-weight: 800;
+        }
+
+        #log {
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            height: 600px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .log-item {
+            margin-bottom: 4px;
+            padding-left: 8px;
+            border-left: 2px solid transparent;
+        }
+
+        .log-cmd {
+            color: #f87171;
+            border-left-color: #ef4444;
+        }
+
+        .log-night {
+            color: #c084fc;
+            font-weight: bold;
+            margin-top: 10px;
+            border-left-color: #a855f7;
+        }
+
+        .log-day {
+            color: #fbbf24;
+            font-weight: bold;
+            margin-top: 10px;
+            border-left-color: #f59e0b;
+        }
+
+        .log-info {
+            color: #38bdf8;
+            border-left-color: #0ea5e9;
+        }
+
+        .log-dead {
+            color: #fca5a5;
+            font-weight: bold;
+            border-left: 3px solid #dc2626;
+            background: rgba(220,38,38,0.1);
+            padding: 2px 8px;
+        }
+
+        .log-heartbreak {
+            color: #fbcfe8;
+            font-style: italic;
+            border-left: 3px solid #db2777;
+            background: rgba(219,39,119,0.1);
+            padding: 2px 8px;
+        }
+
+        .log-win {
+            color: #a7f3d0;
+            font-size: 14px;
+            font-weight: 800;
+            background: rgba(16,185,129,0.2);
+            padding: 10px;
+            margin-top: 15px;
+            text-align: center;
+            border-radius: 6px;
+            border: 1px solid #10b981;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #64748b;
+            }
+    </style>
+</head>
+<body>
+    <h1>🐺 HBV - Karargah Monitörü v8.5</h1>
+
+    <div class="grid-layout">
+        <div class="panel">
+            <h2>1. Kadro Kurulumu (All Couples)</h2>
+            <div class="controls">
+                <button onclick="lobiOlustur(8)">🎲 8 Kişilik Lobi Kur</button>
+                <button onclick="lobiOlustur(9)" style="background:#8b5cf6">🎲 9 Kişilik Lobi (3'lü Aşık Testi)</button>
+                <button onclick="lobiOlustur(16)">🎲 16 Kişilik Lobi Kur</button>
+            </div>
+
+            <h2>2. Karargah (YSS) Yönetimi</h2>
+            <div class="controls">
+                <button class="btn-blue" onclick="tatbikatiBaslat()">🚀 1. Karargaha (C#) Bağlan</button>
+                <button class="btn-night" onclick="geceyiBaslat()">🌙 2. GECE İzni İste</button>
+                <button class="btn-blood" onclick="olumleriIsle()">🩸 3. Gece İnfazlarını Onayla</button>
+                <button class="btn-day" onclick="gunduzuBaslat()">☀️ 4. GÜNDÜZ İzni İste</button>
+                <button class="btn-blood" onclick="olumleriIsle()">🩸 5. Gündüz Linçlerini Onayla</button>
+                <button style="background:#475569" onclick="herkesiSifirla()">🛑 Bağlantıları Kopar</button>
+            </div>
+
+            <div id="roster" class="roster-grid"></div>
+        </div>
+
+        <div class="panel">
+            <h2>📡 Karargah İstihbarat Ağı</h2>
+            <div id="log">Sistem hazır. Karargah (C#) bağlantısı bekleniyor...</div>
+        </div>
+    </div>
+
+    <script>let sahteManga = [];
+        let sockets = [];
+        let bekleyenOlumler = new Set();
+        let oyunBittiMi = false;
+
+        const roleTurkce = {
+            "priest": "İmam", "gunner": "Gunner", "junior-werewolf": "Yavru Kurt", "shaman-werewolf": "Şaman", "aura-seer": "Aura", "seer": "Seer",
+            "alpha-werewolf": "Alfa", "doctor": "Doktor", "mayor": "Mayor", "serial-killer": "Serial Killer", "flower-child": "Çiçek",
+            "shadow-werewolf": "Gölge", "medium": "Medium", "loudmouth": "Geveze", "seer-apprentice": "Çırak", "headhunter": "HH", "fool": "Soytarı",
+            "villager": "Köylü"
+        };
+
+        const V_HAVUZ = ["aura-seer", "seer", "doctor", "mayor", "flower-child", "medium", "loudmouth", "seer-apprentice"];
+        const W_HAVUZ = ["shaman-werewolf", "alpha-werewolf", "shadow-werewolf"];
+        const S_HAVUZ_16 = ["serial-killer", "headhunter"];
+        const S_HAVUZ_8 = ["headhunter", "fool"];
+
+        function logYaz(msg, type = "normal") {
+            const logDiv = document.getElementById('log');
+            let span = document.createElement('div');
+            span.className = `log-item log-${type}`;
+            span.innerText = msg;
+            logDiv.appendChild(span);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function karistir(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function lobiOlustur(kisiSayisi) {
+            herkesiSifirla();
+            sahteManga = [];
+            bekleyenOlumler.clear();
+            oyunBittiMi = false;
+            let roller = [];
+
+            if (kisiSayisi === 8 || kisiSayisi === 9) {
+                let silahliZar = Math.random();
+                if (silahliZar < 0.33) {
+                    roller.push({ role: "priest", team: "VILLAGER" });
+                    karistir([...V_HAVUZ]).slice(0, 4).forEach(r => roller.push({ role: r, team: "VILLAGER" }));
+                } else if (silahliZar < 0.66) {
+                    roller.push({ role: "gunner", team: "VILLAGER" });
+                    karistir([...V_HAVUZ]).slice(0, 4).forEach(r => roller.push({ role: r, team: "VILLAGER" }));
+                } else {
+                    roller.push({ role: "priest", team: "VILLAGER" });
+                    roller.push({ role: "gunner", team: "VILLAGER" });
+                    karistir([...V_HAVUZ]).slice(0, 3).forEach(r => roller.push({ role: r, team: "VILLAGER" }));
+                }
+
+                if (Math.random() > 0.5) {
+                    roller.push({ role: "junior-werewolf", team: "WEREWOLF" });
+                    roller.push({ role: karistir([...W_HAVUZ])[0], team: "WEREWOLF" });
+                } else {
+                    let ikiliKurt = karistir([...W_HAVUZ]).slice(0, 2);
+                    roller.push({ role: ikiliKurt[0], team: "WEREWOLF" });
+                    roller.push({ role: ikiliKurt[1], team: "WEREWOLF" });
+                }
+
+                roller.push({ role: karistir([...S_HAVUZ_8])[0], team: "SOLO" });
+
+                if(kisiSayisi === 9) {
+                    roller.push({ role: "villager", team: "VILLAGER" });
+                }
+            } else {
+                roller.push({ role: "priest", team: "VILLAGER" });
+                roller.push({ role: "gunner", team: "VILLAGER" });
+                V_HAVUZ.forEach(r => roller.push({ role: r, team: "VILLAGER" }));
+                roller.push({ role: "junior-werewolf", team: "WEREWOLF" });
+                W_HAVUZ.forEach(r => roller.push({ role: r, team: "WEREWOLF" }));
+                S_HAVUZ_16.forEach(r => roller.push({ role: r, team: "SOLO" }));
+            }
+
+            roller = karistir(roller);
+            for (let i = 0; i < kisiSayisi; i++) {
+                sahteManga.push({
+                    id: "ID_" + i, name: roleTurkce[roller[i].role] || roller[i].role, role: roller[i].role, team: roller[i].team,
+                    grid: i, asiklar: [], isDead: false, deathReason: "", coupleNum: 0
+                });
+            }
+
+            let indexler = karistir([...Array(kisiSayisi).keys()]);
+            let cNum = 1;
+
+            if (kisiSayisi % 2 === 0) {
+                for (let i = 0; i < kisiSayisi; i += 2) {
+                    let p1 = indexler[i], p2 = indexler[i+1];
+                    sahteManga[p1].asiklar.push(sahteManga[p2].id); sahteManga[p1].coupleNum = cNum;
+                    sahteManga[p2].asiklar.push(sahteManga[p1].id); sahteManga[p2].coupleNum = cNum;
+                    cNum++;
+                }
+            } else {
+                for (let i = 0; i < kisiSayisi - 3; i += 2) {
+                    let p1 = indexler[i], p2 = indexler[i+1];
+                    sahteManga[p1].asiklar.push(sahteManga[p2].id); sahteManga[p1].coupleNum = cNum;
+                    sahteManga[p2].asiklar.push(sahteManga[p1].id); sahteManga[p2].coupleNum = cNum;
+                    cNum++;
+                }
+                let t1 = indexler[kisiSayisi - 3], t2 = indexler[kisiSayisi - 2], t3 = indexler[kisiSayisi - 1];
+                sahteManga[t1].asiklar.push(sahteManga[t2].id, sahteManga[t3].id); sahteManga[t1].coupleNum = cNum;
+                sahteManga[t2].asiklar.push(sahteManga[t1].id, sahteManga[t3].id); sahteManga[t2].coupleNum = cNum;
+                sahteManga[t3].asiklar.push(sahteManga[t1].id, sahteManga[t2].id); sahteManga[t3].coupleNum = cNum;
+            }
+
+            ekranaCiz();
+            document.getElementById('log').innerHTML = "";
+            logYaz(`[BİLGİ] ${kisiSayisi} Kişilik Kadro Oluşturuldu.`, "info");
+        }
+
+        function ekranaCiz() {
+            const container = document.getElementById('roster');
+            container.innerHTML = "";
+            sahteManga.forEach(bot => {
+                // Eşlerin İsimlerini Getir
+                let asikIsimleri = bot.asiklar.map(aId => {
+                    let b = sahteManga.find(x => x.id === aId);
+                    return b ? b.name : "";
+                }).join(", ") || "Yok";
+
+                // Eşlerin Gridlerini Getir (Gridler +1 olarak ekrana basıldığı için burada da +1 yaptık)
+                let asikGridleri = bot.asiklar.map(aId => {
+                    let b = sahteManga.find(x => x.id === aId);
+                    return b ? (b.grid + 1) : "";
+                }).join(", ");
+
+                let gridYazisi = asikGridleri ? `(Grid: ${asikGridleri})` : "";
+                let opacityClass = bot.isDead ? "dead" : "";
+                let deadBadge = bot.isDead ? `<div class="death-badge">☠️ ${bot.deathReason}</div>` : "";
+
+                container.innerHTML += `
+                    <div class="card ${bot.team} ${opacityClass}" id="card-${bot.id}">
+                        <div class="card-header"><span>${bot.name}</span><span style="color:#94a3b8; font-size:11px;">#${bot.grid+1}</span></div>
+
+                        <div style="margin-bottom:4px; font-size:11px;">
+                            Aşığı: <span style="color:#f472b6; font-weight:600">${asikIsimleri}</span>
+                            <span style="color:#94a3b8; font-size:10px; font-weight:bold; margin-left:4px;">${gridYazisi}</span>
+                        </div>
+
+                        <div class="action-box" id="action-${bot.id}">${bot.isDead ? 'ÇEVRİMDIŞI' : 'Bekliyor...'}</div>
+                        ${deadBadge}
+                        <button style="background:#475569; padding: 4px 8px; font-size: 10px; margin-top: 5px; width: 100%; border-radius: 4px; border:1px solid #555" onclick="botOldur('${bot.id}')" ${bot.isDead ? 'disabled' : ''}>${bot.isDead ? '☠️ ÖLÜ' : '🔫 Hedef Yap'}</button>
+                    </div>
+                `;
+            });
+        }
+
+        function tatbikatiBaslat() {
+            if (sahteManga.length === 0) return;
+            logYaz("\n---------- YSS KARARGAHINA BAĞLANILIYOR ----------");
+            sahteManga.forEach((bot, index) => {
+                setTimeout(() => {
+                    let ws = new WebSocket('ws://localhost:9090');
+                    sockets.push({ id: bot.id, ws: ws });
+
+                    ws.onopen = () => {
+                        ws.send(JSON.stringify({ type: "STATUS_REPORT", botName: bot.name, status: "PLAYING", extra: JSON.stringify({ role: bot.role, team: bot.team, grid: bot.grid, playerId: bot.id }) }));
+                        setTimeout(() => {
+                            ws.send(JSON.stringify({ type: "STATUS_REPORT", botName: bot.name, status: "LOVERS_SET", extra: JSON.stringify({ loverIds: bot.asiklar, playerId: bot.id }) }));
+                        }, 200);
+                    };
+
+                    ws.onmessage = (event) => {
+                        try {
+                            let cmd = JSON.parse(event.data);
+                            let targetId = cmd.data;
+                            if(typeof cmd.data === 'string' && cmd.data.includes('{')) { try { let p = JSON.parse(cmd.data); targetId = p.target || p.targetPlayerId || cmd.data; } catch(e){} }
+
+                            let tBot = sahteManga.find(x => x.id === targetId);
+                            let targetName = tBot ? tBot.name : targetId;
+                            logYaz(`🎯 [EMİR ALINDI] ${bot.name} -> ${cmd.action} -> ${targetName}`, "cmd");
+
+                            let actionBox = document.getElementById(`action-${bot.id}`);
+                            let targetCard = document.getElementById(`card-${targetId}`);
+
+                            if(actionBox && tBot && !bot.isDead) {
+                                if (cmd.action === "USE_SKILL") {
+                                    actionBox.innerHTML = `SKILL ATTI<br/><span class="target-text">${targetName}</span>`;
+                                    targetCard.classList.add('targeted');
+                                    bekleyenOlumler.add(targetId);
+                                } else if (cmd.action === "VOTE") {
+                                    actionBox.innerHTML = `OY BASTI<br/><span class="target-text">${targetName}</span>`;
+                                    targetCard.classList.add('targeted');
+                                    bekleyenOlumler.add(targetId);
+                                }
+                            }
+                        } catch(e) {}
+                    };
+                }, index * 100);
+            });
+        }
+
+        function geceyiBaslat() {
+            if (oyunBittiMi) return;
+            logYaz("\n🌙 Karargaha 'NIGHT_STARTED' Sinyali İletiliyor...", "night");
+            temizleActionBoxlari();
+            let aktif = sockets.find(s => s.ws.readyState === WebSocket.OPEN);
+            if (aktif) {
+                let bot = sahteManga.find(x => x.id === aktif.id);
+                aktif.ws.send(JSON.stringify({ type: "STATUS_REPORT", botName: bot.name, status: "NIGHT_STARTED" }));
+            }
+        }
+
+        function gunduzuBaslat() {
+            if (oyunBittiMi) return;
+            logYaz("\n☀️ Karargaha 'DAY_VOTING' Sinyali İletiliyor...", "day");
+            temizleActionBoxlari();
+            let aktif = sockets.find(s => s.ws.readyState === WebSocket.OPEN);
+            if (aktif) {
+                let bot = sahteManga.find(x => x.id === aktif.id);
+                aktif.ws.send(JSON.stringify({ type: "STATUS_REPORT", botName: bot.name, status: "DAY_VOTING" }));
+            }
+        }
+
+        function olumleriIsle() {
+            if (bekleyenOlumler.size === 0) { logYaz("✅ Sunucu: İşlenecek infaz emri yok.", "info"); return; }
+            logYaz("\n🩸 SUNUCU: KARARGAHIN İNFAZ EMİRLERİ GERÇEKLEŞTİRİLİYOR...", "dead");
+
+            let buTurOlenler = [];
+
+            bekleyenOlumler.forEach(deadId => {
+                let bot = sahteManga.find(x => x.id === deadId);
+                if (bot && !bot.isDead) {
+                    bot.isDead = true; bot.deathReason = "İnfaz Edildi"; buTurOlenler.push(bot);
+                    logYaz(`☠️ ÖLDÜ: ${bot.name}`, "dead");
+                }
+            });
+
+            let asikOlenler = [];
+            buTurOlenler.forEach(bot => {
+                bot.asiklar.forEach(loverId => {
+                    let asikBot = sahteManga.find(x => x.id === loverId);
+                    if (asikBot && !asikBot.isDead) {
+                        asikBot.isDead = true; asikBot.deathReason = "Aşk Acısı 💔";
+                        asikOlenler.push(asikBot); buTurOlenler.push(asikBot);
+                        logYaz(`💔 AŞK ACISIYLA ÖLDÜ: ${asikBot.name} (Aşığı vurulduğu için)`, "heartbreak");
+                    }
+                });
+            });
+
+            let aktif = sockets.find(s => s.ws.readyState === WebSocket.OPEN);
+            if (aktif) {
+                buTurOlenler.forEach(bot => {
+                    aktif.ws.send(JSON.stringify({ type: "STATUS_REPORT", botName: sahteManga[0].name, status: "DEAD", targetId: bot.id }));
+                });
+            }
+
+            bekleyenOlumler.clear();
+            ekranaCiz();
+            oyunBitisKontrolu();
+        }
+
+        function oyunBitisKontrolu() {
+            if (oyunBittiMi) return;
+
+            let yasiyanlar = sahteManga.filter(x => !x.isDead);
+            let yasiyanKotuRoller = yasiyanlar.filter(x => x.team === "WEREWOLF" || x.role === "serial-killer");
+            let yasiyanKoyluler = yasiyanlar.filter(x => x.team === "VILLAGER");
+
+            let kazananMesaj = "";
+
+            if (yasiyanlar.length > 0 && yasiyanlar.every(x => yasiyanlar[0].asiklar.includes(x.id) || x.id === yasiyanlar[0].id)) {
+                kazananMesaj = "💖 OYUN BİTTİ! SADECE BİR ÇİFT/GRUP HAYATTA KALDI! AŞIKLAR KAZANDI! 💖";
+            }
+            else if (yasiyanKotuRoller.length === 0 && yasiyanKoyluler.length > 0) {
+                kazananMesaj = "🌾 OYUN BİTTİ! BÜTÜN DÜŞMANLAR YOK EDİLDİ! KÖYLÜLER KAZANDI! 🌾";
+            }
+            else if (yasiyanlar.length <= 2 && yasiyanlar.some(x => x.role === "serial-killer")) {
+                kazananMesaj = "🔪 OYUN BİTTİ! HERKESİ KESTİ! SERİ KATİL KAZANDI! 🔪";
+            }
+            else if (yasiyanKoyluler.length === 0 && yasiyanlar.some(x => x.team === "WEREWOLF")) {
+                kazananMesaj = "🐺 OYUN BİTTİ! KÖY PARÇALANDI! KURTADAMLAR KAZANDI! 🐺";
+            }
+
+            if (kazananMesaj !== "") {
+                oyunBittiMi = true;
+                logYaz(`\n🏆 ${kazananMesaj}`, "win");
+                let aktif = sockets.find(s => s.ws.readyState === WebSocket.OPEN);
+                if(aktif) {
+                    aktif.ws.send(JSON.stringify({ type: "STATUS_REPORT", botName: sahteManga[0].name, status: "GAME_OVER" }));
+                }
+            }
+        }
+
+        function botOldur(botId) { bekleyenOlumler.add(botId); olumleriIsle(); }
+
+        function temizleActionBoxlari() {
+            document.querySelectorAll('.action-box').forEach(box => {
+                let id = box.id.split('-')[1]; let bot = sahteManga.find(x => x.id === id);
+                if(bot && !bot.isDead) { box.innerHTML = "Bekliyor..."; }
+            });
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('targeted'));
+        }
+
+        function herkesiSifirla() {
+            sockets.forEach(s => { if(s.ws.readyState === WebSocket.OPEN) s.ws.close(); });
+            sockets = []; logYaz("🔌 Tüm Karargah Bağlantıları Kesildi.", "info");
+        }</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+@yss.varietyshop.com.tr_HostAddress = http://localhost:5288
+
+GET {{yss.varietyshop.com.tr_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
