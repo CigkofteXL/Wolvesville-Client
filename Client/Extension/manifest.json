@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "HALID BIN VELID(R.A.) - Wolvesville Client AUTO",
+  "version": "2.0.0",
+  "description": "Oyun client dosyalarını dinamik olarak değiştirir V2 TAM OTOMATİK.",
+  "permissions": [
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "host_permissions": [
+    "*://*.wolvesville.com/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "modified_main.js"
+      ],
+      "matches": [
+        "*://*.wolvesville.com/*"
+      ]
+    }
+  ]
+}

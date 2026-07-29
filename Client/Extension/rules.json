@@ -1,0 +1,35 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/modified_main.js"
+      }
+    },
+    "condition": {
+      "urlFilter": "*wolvesville.com*main.*.js",
+      "resourceTypes": [
+        "script"
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 2,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "header": "content-security-policy",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "*wolvesville.com/*",
+      "resourceTypes": ["main_frame", "sub_frame"]
+    }
+  }
+]
