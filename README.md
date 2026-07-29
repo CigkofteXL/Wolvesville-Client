@@ -15,7 +15,7 @@ Sistem, dağıtık mikroservis ve **Client-Server (C2)** mimarisine dayanmaktad�
 
 ```
               ┌──────────────────────────────────────────┐
-              │      fsm.varietyshop.com.tr             │
+              │      fsm.varietyshop.com.tr              │
               │   (Orchestrator & Task Scheduler)        │
               └────────────────────┬─────────────────────┘
                                    │
