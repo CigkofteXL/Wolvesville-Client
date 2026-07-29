@@ -135,8 +135,3 @@ Bu depoda yer alan tüm kodlar, eklentiler ve belgelendirmeler **yalnızca eğit
 
 Bu proje [GPLV3 License](https://www.google.com/search?q=LICENSE) altında açık kaynak olarak paylaşılmıştır.
 
-```
-
-Tüm reponun, parçaların ve mimarinin bağlandığı en detaylı özet bu şekilde. Başka dokümante etmek istediğin bir şey varsa ya da kafana takılan bir yer kaldıysa yazman yeterli!
-
-```
