@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "HALID BIN VELID(R.A.) - Wolvesville Client NETWORK MOD",
+  "version": "3.0.0",
+  "description": "Oyun client dosyalarını dinamik olarak değiştirir V3 SADECE AĞ MODU.",
+  "permissions": [
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "host_permissions": [
+    "*://*.wolvesville.com/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "HBVNET.js"
+      ],
+      "matches": [
+        "*://*.wolvesville.com/*"
+      ]
+    }
+  ]
+}
